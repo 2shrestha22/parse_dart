@@ -72,6 +72,26 @@ class ParseObject {
 
   ParseObject(this.className);
 
+  /// Create a ParseObject with initial data
+  ///
+  /// This is a convenience factory that creates an object and sets
+  /// multiple fields at once.
+  ///
+  /// Example:
+  /// ```dart
+  /// final gameScore = ParseObject.withData('GameScore', {
+  ///   'playerName': 'John Doe',
+  ///   'score': 1337,
+  ///   'cheatMode': false,
+  /// });
+  /// await gameScore.save();
+  /// ```
+  factory ParseObject.withData(String className, Map<String, dynamic> data) {
+    final object = ParseObject(className);
+    data.forEach((key, value) => object.set(key, value));
+    return object;
+  }
+
   /// Create from JSON
   factory ParseObject.fromJson(String className, Map<String, dynamic> json) {
     final object = ParseObject(className);

@@ -2,6 +2,7 @@ import 'src/core/parse_core_manager.dart';
 import 'src/live_query/live_query_client.dart';
 import 'src/storage/storage_controller.dart';
 
+export 'src/annotations/parse_annotations.dart';
 export 'src/cloud/parse_cloud.dart';
 export 'src/controllers/rest_controller.dart';
 export 'src/core/parse_core_manager.dart';
@@ -11,6 +12,7 @@ export 'src/objects/parse_acl.dart';
 export 'src/objects/parse_file.dart';
 export 'src/objects/parse_geo_point.dart';
 export 'src/objects/parse_object.dart';
+export 'src/objects/parse_object_extensions.dart';
 export 'src/objects/parse_query.dart';
 export 'src/objects/parse_relation.dart';
 export 'src/objects/parse_user.dart';
