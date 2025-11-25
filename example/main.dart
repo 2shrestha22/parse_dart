@@ -6,9 +6,14 @@ void main() {
     serverUrl: 'http://localhost:1337/parse',
   );
 
-  final foodClass = ParseObject('food');
+  final foodClass = ParseObject('Food');
 
   foodClass.set('name', 'Pizza');
+
+  final acl = ParseACL();
+  acl.setPublicWriteAccess(true);
+  acl.setPublicReadAccess(false);
+  foodClass.setACL(acl);
 
   foodClass.save();
 }

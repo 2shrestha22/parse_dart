@@ -31,14 +31,15 @@ class ParseQuery<T extends ParseObject> {
   /// Add a constraint
   void _addCondition(String key, String condition, dynamic value) {
     if (!_where.containsKey(key)) {
-      _where[key] = {};
+      _where[key] = <String, dynamic>{};
     }
 
-    if (_where[key] is! Map) {
-      _where[key] = {};
+    if (_where[key] is! Map<String, dynamic>) {
+      _where[key] = <String, dynamic>{};
     }
 
-    (_where[key] as Map<String, dynamic>)[condition] = encode(value);
+    final map = _where[key] as Map<String, dynamic>;
+    map[condition] = encode(value);
   }
 
   /// Equal to

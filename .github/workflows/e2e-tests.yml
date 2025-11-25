@@ -1,0 +1,44 @@
+name: E2E tests
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    e2e:
+        name: Run E2E test suite
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Start parse-server (docker-compose)
+              working-directory: ./example/server
+              run: |
+                  docker compose up -d
+
+            - name: Wait for Parse Server
+              run: |
+                  # Wait until port 1337 is accepting TCP connections (timeout after ~60s)
+                  for i in {1..30}; do
+                    if nc -z localhost 1337; then
+                      echo "parse-server is up" && break
+                    fi
+                    echo "waiting for server... ($i)" && sleep 2
+                  done
+
+            - name: Setup Dart
+              uses: dart-lang/setup-dart@v1
+              with:
+                  sdk: stable
+
+            - name: Install dependencies
+              run: |
+                  dart pub get
+
+            - name: Run E2E tests
+              run: |
+                  dart test test/e2e

@@ -27,17 +27,8 @@ dynamic decode(dynamic value) {
 
       case 'Object':
         final className = value['className'] as String;
-        final obj = ParseObject(className);
-        if (value.containsKey('objectId')) {
-          obj.objectId = value['objectId'] as String;
-        }
-        // Decode all fields
-        value.forEach((key, val) {
-          if (key != '__type' && key != 'className') {
-            obj.set(key, decode(val));
-          }
-        });
-        return obj;
+        // Use existing ParseObject.fromJson factory which handles reserved keys
+        return ParseObject.fromJson(className, value.cast<String, dynamic>());
 
       case 'File':
         return ParseFile.fromJson(value);
