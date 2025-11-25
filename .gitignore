@@ -1,0 +1,33 @@
+.dart_tool/
+.idea/
+.vscode/
+.packages
+pubspec.lock
+build/
+/.pub/
+/.pub-cache/
+coverage/
+*.log
+*.iml
+*.lock
+local.properties
+*.class
+*.jar
+*.war
+*.ear
+
+# Flutter specific
+.flutter-plugins
+.flutter-plugins-dependencies
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+android/.gradle/
+android/.idea/
+android/local.properties
+
+# macOS
+.DS_Store
+
+# Generated plugin registrant
+generated_plugin_registrant.dart
