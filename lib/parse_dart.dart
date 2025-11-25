@@ -2,7 +2,6 @@ import 'src/core/parse_core_manager.dart';
 import 'src/live_query/live_query_client.dart';
 import 'src/storage/storage_controller.dart';
 
-export 'src/annotations/parse_annotations.dart';
 export 'src/cloud/parse_cloud.dart';
 export 'src/controllers/rest_controller.dart';
 export 'src/core/parse_core_manager.dart';
