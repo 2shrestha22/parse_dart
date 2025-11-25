@@ -1,0 +1,44 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: parse-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  parse-server:
+    image: parseplatform/parse-server:latest
+    container_name: my-parse-server
+    environment:
+      PARSE_SERVER_APPLICATION_ID: "myAppId" # Replace with your desired App ID
+      PARSE_SERVER_MASTER_KEY: "myMasterKey" # Replace with a strong Master Key
+      PARSE_SERVER_DATABASE_URI: "mongodb://mongodb:27017/parsedb" # Connects to the MongoDB service
+      # Expose Parse Server URL as the container service name so other containers (like parse-dashboard)
+      # can reach it via Docker DNS. If you access the server from your host, use http://localhost:1337/parse.
+      PARSE_SERVER_URL: "http://parse-server:1337/parse"
+      # Add other environment variables for cloud code, file storage, etc. as needed
+      PARSE_SERVER_MASTER_KEY_IPS: "0.0.0.0/0"
+    ports:
+      - "1337:1337"
+    depends_on:
+      - mongodb
+
+  parse-dashboard:
+    image: parseplatform/parse-dashboard:latest
+    container_name: my-parse-dashboard
+    environment:
+      PARSE_DASHBOARD_ALLOW_INSECURE_HTTP: "true"
+    # Tell the parse-dashboard binary to load a config file from /config
+    # (passing the path via PARSE_DASHBOARD_CONFIG would cause the image to JSON.parse
+    # the environment variable contents which expects JSON text, not a file path).
+    command: ["--config", "/config/parse-dashboard-config.json"]
+    ports:
+      - "4040:4040"
+    volumes:
+      # mount the repo-local config into /config so parse-dashboard can load it
+      - ./parse-dashboard-config.json:/config/parse-dashboard-config.json:ro
+    depends_on:
+      - parse-server
+volumes:
+  mongodb_data:

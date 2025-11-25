@@ -1,0 +1,21 @@
+{
+    "apps": [
+        {
+            "serverURL": "http://localhost:1337/parse",
+            "appId": "myAppId",
+            "masterKey": "myMasterKey",
+            "appName": "MyApp"
+        }
+    ],
+    "users": [
+        {
+            "user": "user",
+            "pass": "pass"
+        }
+    ],
+    "useEncryptedPasswords": false,
+    "allowInsecureHTTP": true,
+    "masterKeyIps": [
+        "192.168.65.1"
+    ]
+}
