@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 
 import '../controllers/rest_controller.dart';
 import '../core/parse_error.dart';
+import '../operations/parse_operation.dart';
 import '../utils/decode.dart';
 import '../utils/encode.dart';
 import '../utils/parse_date.dart';
@@ -149,6 +150,9 @@ class ParseObject {
   }
 
   /// Set a value by key
+  ///
+  /// If the value is a ParseOperation, it will be merged with any existing
+  /// operation for the same key (matching JS SDK behavior).
   void set<T>(String key, T? value) {
     if (key == 'objectId' ||
         key == 'createdAt' ||
@@ -160,7 +164,16 @@ class ParseObject {
       );
     }
 
-    if (value == null) {
+    // Handle operations
+    if (value is ParseOperation) {
+      // Merge with existing operation if present
+      final existing = localData[key];
+      if (existing is ParseOperation) {
+        localData[key] = value.merge(existing);
+      } else {
+        localData[key] = value;
+      }
+    } else if (value == null) {
       localData[key] = null;
     } else {
       localData[key] = value;

@@ -22,6 +22,11 @@ void main() {
       await deleteAllObjects(testClassName);
     });
 
+    // Purge entire test database after all tests complete
+    tearDownAll(() async {
+      await purgeAllTestClasses();
+    });
+
     group('Basic CRUD Operations', () {
       test('should create and save a new ParseObject', () async {
         final object = ParseObject(testClassName);

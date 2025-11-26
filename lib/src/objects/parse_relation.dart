@@ -1,3 +1,4 @@
+import '../operations/parse_operation.dart';
 import 'parse_object.dart';
 import 'parse_query.dart';
 
@@ -15,19 +16,17 @@ import 'parse_query.dart';
 /// final comments = await query.find();
 /// ```
 class ParseRelation<T> {
-  final Object parent;
+  final ParseObject parent;
   final String key;
-  final String? targetClassName;
-
-  final List<Object> _addedObjects = [];
-  final List<Object> _removedObjects = [];
+  String? targetClassName;
 
   ParseRelation(this.parent, this.key, {this.targetClassName});
 
   /// Create from JSON
   factory ParseRelation.fromJson(Map<String, dynamic> json) {
+    // Create a placeholder parent for deserialization
     return ParseRelation(
-      Object(), // Placeholder parent
+      ParseObject('_Placeholder'),
       '',
       targetClassName: json['className'] as String?,
     );
@@ -41,16 +40,70 @@ class ParseRelation<T> {
     };
   }
 
-  /// Add an object to the relation
-  void add(Object object) {
-    _addedObjects.add(object);
-    _removedObjects.remove(object);
+  /// Add an object or array of objects to the relation
+  ///
+  /// This creates a RelationOperation and applies it to the parent object.
+  /// Matches JS SDK behavior (lines 63-79 in ParseRelation.ts)
+  void add(dynamic objects) {
+    // Convert single object to list
+    final List<dynamic> objectList;
+    if (objects is List) {
+      objectList = objects;
+    } else {
+      objectList = [objects];
+    }
+
+    if (objectList.isEmpty) {
+      return;
+    }
+
+    // Create the relation operation
+    final operation = RelationOperation(
+      objectsToAdd: objectList,
+      objectsToRemove: const [],
+    );
+
+    // Apply to parent (this will merge with existing operations)
+    parent.set(key, operation);
+
+    // Extract targetClassName from the operation
+    // This matches JS SDK line 77
+    if (operation.targetClassName != null) {
+      targetClassName = operation.targetClassName;
+    }
   }
 
-  /// Remove an object from the relation
-  void remove(Object object) {
-    _removedObjects.add(object);
-    _addedObjects.remove(object);
+  /// Remove an object or array of objects from the relation
+  ///
+  /// This creates a RelationOperation and applies it to the parent object.
+  /// Matches JS SDK behavior (lines 86-100 in ParseRelation.ts)
+  void remove(dynamic objects) {
+    // Convert single object to list
+    final List<dynamic> objectList;
+    if (objects is List) {
+      objectList = objects;
+    } else {
+      objectList = [objects];
+    }
+
+    if (objectList.isEmpty) {
+      return;
+    }
+
+    // Create the relation operation
+    final operation = RelationOperation(
+      objectsToAdd: const [],
+      objectsToRemove: objectList,
+    );
+
+    // Apply to parent (this will merge with existing operations)
+    parent.set(key, operation);
+
+    // Extract targetClassName from the operation
+    // This matches JS SDK line 99
+    if (operation.targetClassName != null) {
+      targetClassName = operation.targetClassName;
+    }
   }
 
   /// Get a query for related objects
@@ -64,18 +117,11 @@ class ParseRelation<T> {
   /// final comments = await query.find();
   /// ```
   ParseQuery<ParseObject> query() {
-    final parentObj = parent as ParseObject?;
-    if (parentObj == null) {
-      throw StateError(
-        'Cannot construct a query for a Relation without a parent',
-      );
-    }
-
     final ParseQuery<ParseObject> query;
     if (targetClassName == null) {
       // If targetClassName is not set, query parent's className
       // This matches JS SDK behavior (lines 128-129)
-      query = ParseQuery<ParseObject>(parentObj.className);
+      query = ParseQuery<ParseObject>(parent.className);
       // Note: redirectClassNameForKey would be set here in JS SDK
       // but we'll handle this when we need it
     } else {
@@ -85,16 +131,13 @@ class ParseRelation<T> {
     // Set up $relatedTo constraint exactly like JS SDK (lines 133-138)
     query.addCondition('\$relatedTo', 'object', {
       '__type': 'Pointer',
-      'className': parentObj.className,
-      'objectId': parentObj.objectId,
+      'className': parent.className,
+      'objectId': parent.objectId,
     });
     query.addCondition('\$relatedTo', 'key', key);
 
     return query;
   }
-
-  /// Check if there are pending changes
-  bool get hasChanges => _addedObjects.isNotEmpty || _removedObjects.isNotEmpty;
 
   @override
   String toString() =>

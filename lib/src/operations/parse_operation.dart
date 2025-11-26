@@ -1,3 +1,4 @@
+import '../objects/parse_object.dart';
 import '../utils/encode.dart';
 
 /// Base class for all Parse operations
@@ -204,45 +205,166 @@ class RemoveOperation extends ParseOperation {
 }
 
 /// Relation operation - modifies a relation
+///
+/// Matches JS SDK RelationOp implementation (lines 300-453 in ParseOp.ts)
 class RelationOperation extends ParseOperation {
-  final List<dynamic> objectsToAdd;
-  final List<dynamic> objectsToRemove;
+  String? targetClassName;
+  final List<String> relationsToAdd;
+  final List<String> relationsToRemove;
 
   RelationOperation({
-    this.objectsToAdd = const [],
-    this.objectsToRemove = const [],
-  });
+    List<dynamic> objectsToAdd = const [],
+    List<dynamic> objectsToRemove = const [],
+  })  : relationsToAdd = [],
+        relationsToRemove = [] {
+    // Extract IDs from objects to add
+    if (objectsToAdd.isNotEmpty) {
+      for (final obj in objectsToAdd) {
+        final id = _extractId(obj);
+        if (!relationsToAdd.contains(id)) {
+          relationsToAdd.add(id);
+        }
+      }
+    }
+
+    // Extract IDs from objects to remove
+    if (objectsToRemove.isNotEmpty) {
+      for (final obj in objectsToRemove) {
+        final id = _extractId(obj);
+        if (!relationsToRemove.contains(id)) {
+          relationsToRemove.add(id);
+        }
+      }
+    }
+  }
+
+  /// Extract ID and validate className
+  /// Matches JS SDK _extractId (lines 318-338)
+  String _extractId(dynamic obj) {
+    if (obj is String) {
+      return obj;
+    }
+
+    // Must be a ParseObject with an objectId
+    if (obj is! ParseObject) {
+      throw ArgumentError('Relation can only contain ParseObject instances');
+    }
+
+    if (obj.objectId == null) {
+      throw StateError(
+        'You cannot add or remove an unsaved Parse Object from a relation',
+      );
+    }
+
+    // Set or validate targetClassName
+    if (targetClassName == null) {
+      targetClassName = obj.className;
+    } else if (targetClassName != obj.className) {
+      throw ArgumentError(
+        'Tried to create a Relation with 2 different object types: '
+        '$targetClassName and ${obj.className}.',
+      );
+    }
+
+    return obj.objectId!;
+  }
 
   @override
   dynamic apply(dynamic oldValue) {
     // Relations are handled server-side
+    // This matches JS SDK behavior (line 340-370)
     return oldValue;
   }
 
   @override
   Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{};
-
-    if (objectsToAdd.isNotEmpty) {
-      json['__op'] = 'AddRelation';
-      json['objects'] = objectsToAdd.map((o) => encode(o)).toList();
-    } else if (objectsToRemove.isNotEmpty) {
-      json['__op'] = 'RemoveRelation';
-      json['objects'] = objectsToRemove.map((o) => encode(o)).toList();
+    // Matches JS SDK toJSON (lines 425-452)
+    Map<String, dynamic> idToPointer(String id) {
+      return {
+        '__type': 'Pointer',
+        'className': targetClassName,
+        'objectId': id,
+      };
     }
 
-    return json;
+    Map<String, dynamic>? adds;
+    Map<String, dynamic>? removes;
+
+    if (relationsToAdd.isNotEmpty) {
+      final pointers = relationsToAdd.map(idToPointer).toList();
+      adds = {'__op': 'AddRelation', 'objects': pointers};
+    }
+
+    if (relationsToRemove.isNotEmpty) {
+      final pointers = relationsToRemove.map(idToPointer).toList();
+      removes = {'__op': 'RemoveRelation', 'objects': pointers};
+    }
+
+    // Return batch operation if both add and remove
+    if (adds != null && removes != null) {
+      return {
+        '__op': 'Batch',
+        'ops': [adds, removes],
+      };
+    }
+
+    return adds ?? removes ?? {};
   }
 
   @override
   ParseOperation merge(ParseOperation? previous) {
+    // Matches JS SDK mergeWith (lines 373-422)
     if (previous == null) return this;
-    if (previous is RelationOperation) {
-      return RelationOperation(
-        objectsToAdd: [...previous.objectsToAdd, ...objectsToAdd],
-        objectsToRemove: [...previous.objectsToRemove, ...objectsToRemove],
+
+    if (previous is! RelationOperation) {
+      return this;
+    }
+
+    // Validate targetClassName compatibility
+    if (previous.targetClassName != null &&
+        previous.targetClassName != targetClassName) {
+      throw ArgumentError(
+        'Related object must be of class ${previous.targetClassName}, '
+        'but ${targetClassName ?? 'null'} was passed in.',
       );
     }
-    return this;
+
+    // Merge adds
+    final newAdd = [...previous.relationsToAdd];
+    for (final r in relationsToRemove) {
+      newAdd.remove(r);
+    }
+    for (final r in relationsToAdd) {
+      if (!newAdd.contains(r)) {
+        newAdd.add(r);
+      }
+    }
+
+    // Merge removes
+    final newRemove = [...previous.relationsToRemove];
+    for (final r in relationsToAdd) {
+      newRemove.remove(r);
+    }
+    for (final r in relationsToRemove) {
+      if (!newRemove.contains(r)) {
+        newRemove.add(r);
+      }
+    }
+
+    // Create merged operation
+    final merged = RelationOperation._internal(
+      relationsToAdd: newAdd,
+      relationsToRemove: newRemove,
+      targetClassName: targetClassName,
+    );
+
+    return merged;
   }
+
+  /// Internal constructor for merge
+  RelationOperation._internal({
+    required this.relationsToAdd,
+    required this.relationsToRemove,
+    required this.targetClassName,
+  });
 }

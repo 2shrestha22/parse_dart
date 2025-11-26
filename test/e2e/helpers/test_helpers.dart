@@ -28,19 +28,39 @@ String generateTestClassName([String prefix = 'TestObject']) {
 Future<void> deleteAllObjects(String className) async {
   try {
     final query = ParseQuery(className);
-    final results = await query.find();
+    query.limit(10000); // Get more objects at once
+    final results = await query.find(options: getMasterKeyOptions());
 
+    if (results.isEmpty) {
+      return;
+    }
+
+    // Delete all objects
     for (final object in results) {
       try {
-        await object.delete();
+        await object.delete(options: getMasterKeyOptions());
       } catch (e) {
-        // Ignore individual delete errors during cleanup
-        print('Warning: Failed to delete object ${object.objectId}: $e');
+        // Try again with a fresh query for this specific object
+        try {
+          final freshQuery = ParseQuery(className);
+          freshQuery.whereEqualTo('objectId', object.objectId);
+          final freshResults =
+              await freshQuery.find(options: getMasterKeyOptions());
+          if (freshResults.isNotEmpty) {
+            await freshResults[0].delete(options: getMasterKeyOptions());
+          }
+        } catch (e2) {
+          // Ignore - object may have been deleted already
+        }
       }
+    }
+
+    // Recursively call to ensure all objects are deleted (in case there were more than limit)
+    if (results.length >= 10000) {
+      await deleteAllObjects(className);
     }
   } catch (e) {
     // Ignore query errors during cleanup
-    print('Warning: Failed to query for cleanup: $e');
   }
 }
 
@@ -93,4 +113,82 @@ Future<void> waitBriefly(
 /// Get ParseRequestOptions with master key enabled for tests
 ParseRequestOptions getMasterKeyOptions() {
   return const ParseRequestOptions(useMasterKey: true);
+}
+
+/// Purge all non-system classes from the database
+///
+/// This deletes ALL classes except Parse's built-in system classes.
+/// Use this in tearDownAll to completely clean the test database.
+///
+/// System classes that are preserved: _User, _Role, _Session, _Installation, _Product
+Future<void> purgeAllTestClasses() async {
+  // Parse Server's built-in system classes that should NOT be deleted
+  final systemClasses = {
+    '_User',
+    '_Role',
+    '_Session',
+    '_Installation',
+    '_Product',
+    '_Subscription',
+    '_PushStatus',
+    '_JobStatus',
+    '_JobSchedule',
+    '_Hooks',
+    '_GlobalConfig',
+    '_Audience',
+  };
+
+  print('Purging all non-system classes from database...');
+
+  try {
+    // Use Parse REST API to get all schemas
+    final controller = ParseRESTController.instance;
+    final response = await controller.request(
+      'GET',
+      'schemas',
+      options: getMasterKeyOptions(),
+    );
+
+    int deletedClasses = 0;
+    int failedClasses = 0;
+    final results = response.data['results'] as List<dynamic>?;
+
+    if (results != null) {
+      for (final schema in results) {
+        final className = schema['className'] as String;
+
+        // Skip system classes
+        if (systemClasses.contains(className)) {
+          continue;
+        }
+
+        try {
+          // First delete all objects in the class (with retries)
+          await deleteAllObjects(className);
+
+          // Small delay to let Parse Server update
+          await Future.delayed(const Duration(milliseconds: 50));
+
+          // Then delete the class schema itself
+          await controller.request(
+            'DELETE',
+            'schemas/$className',
+            options: getMasterKeyOptions(),
+          );
+          deletedClasses++;
+        } catch (e) {
+          failedClasses++;
+        }
+      }
+    }
+
+    if (failedClasses > 0) {
+      print(
+          '✓ Purged $deletedClasses classes ($failedClasses failed - may have orphaned data)');
+    } else {
+      print('✓ Successfully purged $deletedClasses classes');
+    }
+  } catch (e) {
+    print('✗ Error: Failed to purge classes: $e');
+  }
 }
