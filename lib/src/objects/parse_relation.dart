@@ -1,3 +1,6 @@
+import 'parse_object.dart';
+import 'parse_query.dart';
+
 /// Represents a relation between Parse objects
 ///
 /// Example:
@@ -51,10 +54,43 @@ class ParseRelation<T> {
   }
 
   /// Get a query for related objects
-  /// This will be properly implemented when ParseQuery is created
-  dynamic query() {
-    // TODO: Return ParseQuery<T> when implemented
-    throw UnimplementedError('ParseQuery not yet implemented');
+  ///
+  /// Returns a [ParseQuery] that will find all objects in this relation.
+  ///
+  /// Example:
+  /// ```dart
+  /// final relation = post.relation<Comment>('comments');
+  /// final query = relation.query();
+  /// final comments = await query.find();
+  /// ```
+  ParseQuery<ParseObject> query() {
+    final parentObj = parent as ParseObject?;
+    if (parentObj == null) {
+      throw StateError(
+        'Cannot construct a query for a Relation without a parent',
+      );
+    }
+
+    final ParseQuery<ParseObject> query;
+    if (targetClassName == null) {
+      // If targetClassName is not set, query parent's className
+      // This matches JS SDK behavior (lines 128-129)
+      query = ParseQuery<ParseObject>(parentObj.className);
+      // Note: redirectClassNameForKey would be set here in JS SDK
+      // but we'll handle this when we need it
+    } else {
+      query = ParseQuery<ParseObject>(targetClassName!);
+    }
+
+    // Set up $relatedTo constraint exactly like JS SDK (lines 133-138)
+    query.addCondition('\$relatedTo', 'object', {
+      '__type': 'Pointer',
+      'className': parentObj.className,
+      'objectId': parentObj.objectId,
+    });
+    query.addCondition('\$relatedTo', 'key', key);
+
+    return query;
   }
 
   /// Check if there are pending changes

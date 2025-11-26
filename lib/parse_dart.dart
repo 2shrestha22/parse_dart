@@ -47,10 +47,14 @@ class Parse {
   /// - [applicationId]: Your Parse application ID
   /// - [serverUrl]: URL of your Parse Server
   /// - [clientKey]: Your Parse client key (optional, recommended for security)
-  /// - [masterKey]: Your Parse master key (Node.js only, never use in client apps!)
-  /// - [liveQueryUrl]: WebSocket URL for LiveQuery (optional, auto-inferred if omitted)
-  /// - [storageController]: Storage implementation for persistence (optional but recommended)
-  /// - [webSocketFactory]: WebSocket factory for Live Query (optional, required for Live Query)
+  /// - [masterKey]: Your Parse master key (server only,
+  ///   never use in client apps!)
+  /// - [liveQueryUrl]: WebSocket URL for LiveQuery (optional,
+  ///   auto-inferred if omitted)
+  /// - [storageController]: Storage implementation for persistence
+  ///   (optional but recommended)
+  /// - [webSocketFactory]: WebSocket factory for Live Query
+  ///   (optional, required for Live Query)
   ///
   /// Example with storage (Flutter):
   /// ```dart

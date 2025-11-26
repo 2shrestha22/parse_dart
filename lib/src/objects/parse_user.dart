@@ -24,7 +24,8 @@ import 'parse_object.dart';
 /// ```
 class ParseUser extends ParseObject {
   static ParseUser? _currentUser;
-  // Storage key for current user (will be used when storage persistence is implemented)
+  // Storage key for current user (will be used when storage persistence is
+  // implemented)
   // ignore: unused_field
   static const String _currentUserKey = 'ParseUser_currentUser';
 

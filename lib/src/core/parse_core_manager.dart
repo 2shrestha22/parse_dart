@@ -21,8 +21,8 @@ class ParseCoreManager {
   String? _liveQueryUrl;
 
   // Settings
-  bool _idempotency = false;
-  int _requestAttemptLimit = 3;
+  bool idempotency = false;
+  int requestAttemptLimit = 3;
   final Map<String, String> _requestHeaders = {};
 
   /// Initialize the Parse SDK
@@ -108,12 +108,6 @@ class ParseCoreManager {
     ensureInitialized();
     return _liveQueryUrl!;
   }
-
-  bool get idempotency => _idempotency;
-  set idempotency(bool value) => _idempotency = value;
-
-  int get requestAttemptLimit => _requestAttemptLimit;
-  set requestAttemptLimit(int value) => _requestAttemptLimit = value;
 
   Map<String, String> get requestHeaders => Map.unmodifiable(_requestHeaders);
 

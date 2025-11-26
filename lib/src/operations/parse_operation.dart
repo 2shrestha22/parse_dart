@@ -3,7 +3,8 @@ import '../utils/encode.dart';
 /// Base class for all Parse operations
 ///
 /// Operations represent changes to fields in a ParseObject.
-/// They are used to track modifications and send efficient updates to the server.
+/// They are used to track modifications and send efficient updates
+/// to the server.
 abstract class ParseOperation {
   /// Apply this operation to a value
   dynamic apply(dynamic oldValue);

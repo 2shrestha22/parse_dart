@@ -28,8 +28,8 @@ class ParseQuery<T extends ParseObject> {
 
   ParseQuery(this.className);
 
-  /// Add a constraint
-  void _addCondition(String key, String condition, dynamic value) {
+  /// Add a constraint (internal method for library use)
+  void addCondition(String key, String condition, dynamic value) {
     if (!_where.containsKey(key)) {
       _where[key] = <String, dynamic>{};
     }
@@ -49,59 +49,59 @@ class ParseQuery<T extends ParseObject> {
 
   /// Not equal to
   void whereNotEqualTo(String key, dynamic value) {
-    _addCondition(key, '\$ne', value);
+    addCondition(key, '\$ne', value);
   }
 
   /// Less than
   void whereLessThan(String key, dynamic value) {
-    _addCondition(key, '\$lt', value);
+    addCondition(key, '\$lt', value);
   }
 
   /// Less than or equal to
   void whereLessThanOrEqualTo(String key, dynamic value) {
-    _addCondition(key, '\$lte', value);
+    addCondition(key, '\$lte', value);
   }
 
   /// Greater than
   void whereGreaterThan(String key, dynamic value) {
-    _addCondition(key, '\$gt', value);
+    addCondition(key, '\$gt', value);
   }
 
   /// Greater than or equal to
   void whereGreaterThanOrEqualTo(String key, dynamic value) {
-    _addCondition(key, '\$gte', value);
+    addCondition(key, '\$gte', value);
   }
 
   /// Contained in list
   void whereContainedIn(String key, List<dynamic> values) {
-    _addCondition(key, '\$in', values);
+    addCondition(key, '\$in', values);
   }
 
   /// Not contained in list
   void whereNotContainedIn(String key, List<dynamic> values) {
-    _addCondition(key, '\$nin', values);
+    addCondition(key, '\$nin', values);
   }
 
   /// Contains all
   void whereContainsAll(String key, List<dynamic> values) {
-    _addCondition(key, '\$all', values);
+    addCondition(key, '\$all', values);
   }
 
   /// Exists
   void whereExists(String key) {
-    _addCondition(key, '\$exists', true);
+    addCondition(key, '\$exists', true);
   }
 
   /// Does not exist
   void whereDoesNotExist(String key) {
-    _addCondition(key, '\$exists', false);
+    addCondition(key, '\$exists', false);
   }
 
   /// Matches regex
   void whereMatches(String key, String regex, {String? modifiers}) {
-    _addCondition(key, '\$regex', regex);
+    addCondition(key, '\$regex', regex);
     if (modifiers != null) {
-      _addCondition(key, '\$options', modifiers);
+      addCondition(key, '\$options', modifiers);
     }
   }
 
@@ -122,7 +122,7 @@ class ParseQuery<T extends ParseObject> {
 
   /// Near geo point
   void whereNear(String key, ParseGeoPoint point) {
-    _addCondition(key, '\$nearSphere', point.toJson());
+    addCondition(key, '\$nearSphere', point.toJson());
   }
 
   /// Within distance
@@ -131,8 +131,8 @@ class ParseQuery<T extends ParseObject> {
     ParseGeoPoint point,
     double maxDistance,
   ) {
-    _addCondition(key, '\$nearSphere', point.toJson());
-    _addCondition(key, '\$maxDistanceInKilometers', maxDistance);
+    addCondition(key, '\$nearSphere', point.toJson());
+    addCondition(key, '\$maxDistanceInKilometers', maxDistance);
   }
 
   /// Within miles
@@ -141,8 +141,8 @@ class ParseQuery<T extends ParseObject> {
     ParseGeoPoint point,
     double maxDistance,
   ) {
-    _addCondition(key, '\$nearSphere', point.toJson());
-    _addCondition(key, '\$maxDistanceInMiles', maxDistance);
+    addCondition(key, '\$nearSphere', point.toJson());
+    addCondition(key, '\$maxDistanceInMiles', maxDistance);
   }
 
   /// Within geo box
@@ -151,7 +151,7 @@ class ParseQuery<T extends ParseObject> {
     ParseGeoPoint southwest,
     ParseGeoPoint northeast,
   ) {
-    _addCondition(key, '\$within', {
+    addCondition(key, '\$within', {
       '\$box': [southwest.toJson(), northeast.toJson()],
     });
   }

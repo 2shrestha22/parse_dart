@@ -1,6 +1,6 @@
 import 'package:parse_dart/parse_dart.dart';
 
-void main() {
+Future<void> main() async {
   Parse.initialize(
     applicationId: 'myAppId',
     serverUrl: 'http://localhost:1337/parse',
@@ -15,5 +15,10 @@ void main() {
   acl.setPublicReadAccess(false);
   foodClass.setACL(acl);
 
-  foodClass.save();
+  await foodClass.save();
+
+  print(foodClass.toFullJson());
+  print(foodClass.toJson());
+  print(foodClass.toString());
+  print(foodClass.toPointer());
 }

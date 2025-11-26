@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable, lines_longer_than_80_chars
+
 import 'package:parse_dart/parse_dart.dart';
 
 /// Example demonstrating convenient Dart patterns for ParseObject
